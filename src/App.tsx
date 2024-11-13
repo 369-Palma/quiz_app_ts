@@ -3,7 +3,7 @@
 
 /* import "./App.css"; */
 import { QuestionCard } from "./components/QuestionCard";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { fetchQuizQuestions, QuestionState, Difficulty } from "./API";
 import { ResultPage } from "./components/ResultPage";
 import { GLobalStyle, Wrapper } from "./App.styles";
