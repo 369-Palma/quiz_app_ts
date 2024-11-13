@@ -1,8 +1,9 @@
+"use client";
 /* https://opentdb.com/api.php?amount=10 */
 
 /* import "./App.css"; */
 import { QuestionCard } from "./components/QuestionCard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchQuizQuestions, QuestionState, Difficulty } from "./API";
 import { ResultPage } from "./components/ResultPage";
 import { GLobalStyle, Wrapper } from "./App.styles";
@@ -14,17 +15,23 @@ export type AnswerObject = {
   correctAnswer: string;
 };
 
-const TOTAL_QUESTIONS = 10;
+const TOTAL_QUESTIONS = 3;
 
 const App = () => {
+  const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState<QuestionState[]>([]);
+  const [number, setNumber] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<AnswerObject[]>([]);
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(true);
+
   const checkAnswer = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!gameOver) {
       const answer = e.currentTarget.value;
-      //check answer
       const correct = questions[number].correct_answer === answer;
-      // Add score if is correct
+
       if (correct) setScore((prev) => prev + 1);
-      // save answer in the right array
+
       const answerObject = {
         question: questions[number].question,
         answer,
@@ -37,32 +44,25 @@ const App = () => {
   };
 
   const nextQuestion = () => {
-    //move to the next question
     const nextQuestion = number + 1;
-    if (nextQuestion === TOTAL_QUESTIONS) {
-      setGameOver(true);
-    } else {
+    if (nextQuestion < TOTAL_QUESTIONS) {
       setNumber(nextQuestion);
     }
   };
 
-  const [loading, setLoading] = useState(false);
-  const [questions, setQuestions] = useState<QuestionState[]>([]);
-  const [number, setNumber] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<AnswerObject[]>([]);
-  const [score, setScore] = useState(0);
-  const [gameOver, setGameOver] = useState(true);
-
-  console.log(questions);
+  // Funzione per verificare e mostrare i risultati
+  const checkResults = () => {
+    setGameOver(true);
+  };
 
   const startTrivia = async () => {
+    setScore(0)
     setLoading(true);
     setGameOver(false);
 
     const newQuestions = await fetchQuizQuestions(
       TOTAL_QUESTIONS,
       Difficulty.EASY
-      //Category.SCIENCE_NATURE
     );
 
     setQuestions(newQuestions);
@@ -77,28 +77,22 @@ const App = () => {
       <GLobalStyle />
       <Wrapper>
         <h1>QUIZ QUEST</h1>
-        {gameOver || userAnswers.length === TOTAL_QUESTIONS ? (
+        {gameOver ? (
           <>
             <button className="start" onClick={startTrivia}>
-              {
-                /* gameOver && */
-                score !== null && userAnswers.length === TOTAL_QUESTIONS
-                  ? "Restart"
-                  : "Start"
-              }
+              {score !== null && userAnswers.length === TOTAL_QUESTIONS
+                ? "Restart"
+                : "Start"}
             </button>
             {score !== null && userAnswers.length === TOTAL_QUESTIONS ? (
-              <>
-                {" "}
-                <ResultPage score={score} total={TOTAL_QUESTIONS} />
-              </>
+              <ResultPage score={score} total={TOTAL_QUESTIONS} />
             ) : null}
           </>
         ) : (
           <>
-            {!gameOver ? <p className="score"> Score: {score}</p> : null}
-            {loading && <p> Loading Questions ...</p>}
-            {!loading && !gameOver && (
+            <p className="score">Score: {score}</p>
+            {loading && <p>Loading Questions...</p>}
+            {!loading && (
               <QuestionCard
                 questionNr={number + 1}
                 totalQuestions={TOTAL_QUESTIONS}
@@ -108,14 +102,19 @@ const App = () => {
                 callback={checkAnswer}
               />
             )}
-            {!gameOver &&
-            !loading &&
-            userAnswers.length === number + 1 &&
-            number !== TOTAL_QUESTIONS - 1 ? (
-              <button className="next" onClick={nextQuestion}>
-                Next Question
+            {/* Mostra "Next Question" se ci sono domande successive; altrimenti mostra "Check results" */}
+            {!loading &&
+              userAnswers.length === number + 1 &&
+              number < TOTAL_QUESTIONS - 1 && (
+                <button className="next" onClick={nextQuestion}>
+                  Next Question
+                </button>
+              )}
+            {!loading && number === TOTAL_QUESTIONS - 1 && userAnswers.length === TOTAL_QUESTIONS && (
+              <button className="next" onClick={checkResults}>
+                Check results
               </button>
-            ) : null}
+            )}
           </>
         )}
       </Wrapper>
